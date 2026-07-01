@@ -112,7 +112,7 @@
     <button class="btn ghost" id="changeLocBtn">Change</button>
     <button class="btn" id="refreshBtn">Refresh</button>
     <div class="search-row" id="searchRow">
-      <input type="text" id="searchInput" placeholder="Try just the town name, e.g. Slingerlands">
+      <input type="text" id="searchInput" placeholder="Try just the town name, e.g. Albany">
       <button class="btn" id="searchBtn">Search</button>
     </div>
     <div class="search-results" id="searchResults"></div>
@@ -130,7 +130,7 @@
 </div>
 
 <script>
-const DEFAULT_LOC = { lat: 42.6526, lon: -73.7562, label: "Albany, NY" };
+const DEFAULT_LOC = { lat: 42.6884, lon: -73.8217, label: "Albany, NY" };
 
 const THRESHOLDS = [
   { max: 80,   key: "green",  label: "Low Risk",        advice: "Normal activity. Keep an eye on athletes who are unacclimated, ill, or on certain medications." },
@@ -574,11 +574,11 @@ document.getElementById('changeLocBtn').addEventListener('click', () => {
 
 function buildQueryVariants(q){
   const variants = [q];
-  // Strip anything after a comma: "Slingerlands, NY" -> "Slingerlands"
+  // Strip anything after a comma: "Albany, NY" -> "Albany"
   const commaBase = q.split(',')[0].trim();
   if (commaBase && commaBase !== q) variants.push(commaBase);
 
-  // Strip a trailing 2-letter state/province abbreviation: "Slingerlands NY" -> "Slingerlands"
+  // Strip a trailing 2-letter state/province abbreviation: "Albany NY" -> "Albany"
   const words = q.trim().split(/\s+/);
   if (words.length > 1){
     const last = words[words.length-1];
