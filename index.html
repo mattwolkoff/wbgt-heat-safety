@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WBGT Heat Safety</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;900&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F7F2E7;
+    --paper-dim:#EDE6D6;
+    --ink:#2A2520;
+    --ink-soft:#6B6355;
+    --line:#D9CFB8;
+    --green:#4C7A52;
+    --yellow:#C99A2E;
+    --orange:#CC7A34;
+    --red:#B8432E;
+    --black:#22201D;
+    --white-flag:#8C9AA6;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:'Inter',sans-serif;}
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 40px;}
+
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap;}
+  .masthead h1{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:28px;letter-spacing:0.5px;margin:0;text-transform:uppercase;}
+  .masthead .sub{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);letter-spacing:0.5px;text-transform:uppercase;}
+
+  .locbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:10px 12px;background:var(--paper-dim);border:1px solid var(--line);border-radius:10px;}
+  .locbar .loc-label{font-weight:600;font-size:14px;flex:1;min-width:120px;}
+  .locbar .loc-label .pin{opacity:0.6;margin-right:4px;}
+  .btn{font-family:'Inter',sans-serif;font-size:12px;font-weight:600;padding:7px 12px;border-radius:7px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);cursor:pointer;white-space:nowrap;}
+  .btn:hover{opacity:0.85;}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn.ghost:hover{background:#fff;}
+  .search-row{display:none;gap:6px;width:100%;margin-top:8px;}
+  .search-row.open{display:flex;}
+  .search-row input{flex:1;font-family:'Inter';font-size:13px;padding:7px 10px;border-radius:7px;border:1px solid var(--line);background:#fff;color:var(--ink);}
+  .search-row input:focus{outline:2px solid var(--ink);outline-offset:1px;}
+  .search-results{width:100%;margin-top:6px;}
+  .search-results div{font-size:13px;padding:6px 8px;border-radius:6px;cursor:pointer;}
+  .search-results div:hover{background:#fff;}
+
+  .banner{border-radius:14px;padding:20px 22px;margin-bottom:6px;position:relative;overflow:hidden;transition:background 0.4s ease;}
+  .banner .flagname{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;opacity:0.85;margin-bottom:6px;}
+  .banner .bignum{font-family:'Big Shoulders Display',sans-serif;font-weight:900;font-size:76px;line-height:0.9;letter-spacing:-1px;}
+  .banner .bignum sup{font-size:28px;font-weight:700;}
+  .banner .cat{font-size:17px;font-weight:700;margin-top:4px;}
+  .banner .advice{font-size:14px;margin-top:6px;max-width:480px;line-height:1.4;}
+  .banner .meta{font-family:'IBM Plex Mono',monospace;font-size:11px;margin-top:14px;opacity:0.8;letter-spacing:0.3px;}
+  .banner.flag-green{background:var(--green);color:#F3F7EE;}
+  .banner.flag-yellow{background:var(--yellow);color:#2A2520;}
+  .banner.flag-orange{background:var(--orange);color:#FFF6EC;}
+  .banner.flag-red{background:var(--red);color:#FFF2EE;}
+  .banner.flag-black{background:var(--black);color:#F0E9DC;}
+
+  .flagpole{position:absolute;right:18px;top:14px;width:26px;height:64px;opacity:0.35;}
+
+  section{margin-top:26px;}
+  h2.section-title{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-soft);margin:0 0 10px;}
+
+  .timeline{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:thin;}
+  .chip{flex:0 0 auto;width:42px;text-align:center;cursor:pointer;padding:6px 0 8px;border-radius:8px;background:transparent;border:2px solid transparent;}
+  .chip:hover{background:var(--paper-dim);}
+  .chip.active{border-color:var(--ink);background:#fff;}
+  .chip .hr{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-bottom:4px;}
+  .chip .swatch{width:20px;height:20px;border-radius:5px;margin:0 auto;}
+  .chip .val{font-family:'IBM Plex Mono',monospace;font-size:10px;margin-top:4px;color:var(--ink-soft);}
+  .sw-green{background:var(--green);}
+  .sw-yellow{background:var(--yellow);}
+  .sw-orange{background:var(--orange);}
+  .sw-red{background:var(--red);}
+  .sw-black{background:var(--black);}
+
+  .detail{background:var(--paper-dim);border:1px solid var(--line);border-radius:10px;padding:14px 16px;}
+  .detail table{width:100%;border-collapse:collapse;font-family:'IBM Plex Mono',monospace;font-size:13px;}
+  .detail td{padding:4px 0;}
+  .detail td.k{color:var(--ink-soft);width:55%;}
+  .detail td.v{font-weight:600;text-align:right;}
+
+  .legend{display:flex;flex-direction:column;gap:6px;}
+  .legend-row{display:flex;align-items:center;gap:10px;font-size:13px;padding:5px 0;}
+  .legend-row .sw{width:16px;height:16px;border-radius:4px;flex:0 0 auto;}
+  .legend-row .rng{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);width:80px;flex:0 0 auto;}
+  .legend-row .txt{flex:1;}
+
+  .footnote{font-size:12px;color:var(--ink-soft);line-height:1.6;margin-top:26px;border-top:1px solid var(--line);padding-top:14px;}
+  .footnote a{color:var(--ink-soft);}
+
+  .state-msg{padding:30px 10px;text-align:center;color:var(--ink-soft);font-size:14px;}
+  .state-msg .btn{margin-top:10px;}
+
+  @media (max-width:420px){
+    .banner .bignum{font-size:60px;}
+    .flagpole{display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="masthead">
+    <h1>WBGT Heat Safety</h1>
+    <div class="sub">Field Practice Planner</div>
+  </div>
+
+  <div class="locbar">
+    <div class="loc-label"><span class="pin">📍</span><span id="locLabel">Locating…</span></div>
+    <button class="btn ghost" id="useLocationBtn">Use my location</button>
+    <button class="btn ghost" id="changeLocBtn">Change</button>
+    <button class="btn" id="refreshBtn">Refresh</button>
+    <div class="search-row" id="searchRow">
+      <input type="text" id="searchInput" placeholder="Try just the town name, e.g. Slingerlands">
+      <button class="btn" id="searchBtn">Search</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+    <div class="search-hint" id="searchHint" style="display:none;width:100%;font-size:11px;color:var(--ink-soft);margin-top:4px;">Tip: search matches place names only — try the town name by itself rather than "Town, ST".</div>
+  </div>
+
+  <div id="mainContent">
+    <div class="state-msg">Loading conditions…</div>
+  </div>
+
+  <div class="footnote">
+    <strong>Methodology:</strong> WBGT is modeled with the Liljegren et al. (2008) heat-transfer method (the basis of OSHA's WBGT calculator), simulating a black-globe thermometer and wet-bulb wick from temperature, humidity, wind, solar radiation, and pressure — not a statistical formula. Wind is extrapolated from 10 m to the model's ~2 m level using a standard log wind profile, a simplification for terrain where a full stability-class correction isn't available. If the solver doesn't converge for an hour (rare), that hour falls back to a simpler formula, flagged in its detail panel. This is a modeled estimate, not a sensor reading — actual on-field conditions (turf, shade, asphalt) can vary. Flag thresholds are a general-purpose scale for outdoor youth/scholastic sports; defer to your league's official heat policy where one exists. Data from <a href="https://open-meteo.com" target="_blank">Open-Meteo</a>.
+  </div>
+
+</div>
+
+<script>
+const DEFAULT_LOC = { lat: 42.6526, lon: -73.7562, label: "Albany, NY" };
+
+const THRESHOLDS = [
+  { max: 80,   key: "green",  label: "Low Risk",        advice: "Normal activity. Keep an eye on athletes who are unacclimated, ill, or on certain medications." },
+  { max: 85,   key: "yellow", label: "Moderate Risk",   advice: "Increase rest breaks and hydration reminders. Watch for early signs of heat illness." },
+  { max: 88,   key: "orange", label: "High Risk",       advice: "Limit high-intensity work to roughly 1 hour. Frequent breaks in shade, hydration mandatory." },
+  { max: 90,   key: "red",    label: "Very High Risk",  advice: "Limit strenuous activity to roughly 30 minutes. Max shade and rest time between reps." },
+  { max: 999,  key: "black",  label: "Extreme Risk",    advice: "Cancel or postpone outdoor practice. This is not a safe window for sustained exertion." }
+];
+
+let state = {
+  loc: null,
+  utcOffsetSeconds: 0,
+  hourly: [],       // [{timeStr, hourLabel, tempF, rh, wbgt, method, globeF, nwbF, cat}]
+  selectedIdx: null
+};
+
+function categorize(wbgtF){
+  for (const t of THRESHOLDS){ if (wbgtF < t.max) return t; }
+  return THRESHOLDS[THRESHOLDS.length-1];
+}
+
+function computeWBGTSimpleF(tempF, rhPct){
+  const tC = (tempF - 32) * 5/9;
+  const e = (rhPct/100) * 6.105 * Math.exp((17.27*tC)/(237.7+tC)); // hPa
+  const wbgtC = 0.567*tC + 0.393*e + 3.94;
+  return wbgtC * 9/5 + 32;
+}
+
+/* ============================================================================
+ * Liljegren et al. (2008) outdoor WBGT model, ported from the reference
+ * implementation (wbgt.c, UChicago Argonne / OSHA). Computes natural wet-bulb
+ * and black-globe temperatures from standard weather variables via heat and
+ * mass transfer, rather than a statistical fit. See methodology note in the
+ * page footer for the one deliberate simplification (wind-height adjustment).
+ * ========================================================================== */
+const LJ = {
+  Cp: 1003.5, M_AIR: 28.97, M_H2O: 18.015, R_GAS: 8314.34,
+  STEFANB: 5.6696e-8,
+  EMIS_WICK: 0.95, ALB_WICK: 0.4, D_WICK: 0.007, L_WICK: 0.0254,
+  EMIS_GLOBE: 0.95, ALB_GLOBE: 0.05, D_GLOBE: 0.0508,
+  EMIS_SFC: 0.999, ALB_SFC: 0.45,
+  CZA_MIN: 0.00873, NORMSOLAR_MAX: 0.85, REF_HEIGHT: 2.0, MIN_SPEED: 0.13,
+  CONVERGENCE: 0.02, MAX_ITER: 50, SOLAR_CONST: 1367.0
+};
+LJ.R_AIR = LJ.R_GAS / LJ.M_AIR;
+LJ.RATIO = LJ.Cp * LJ.M_AIR / LJ.M_H2O;
+LJ.PR = LJ.Cp / (LJ.Cp + 1.25 * LJ.R_AIR);
+
+function ljEsat(tk, phase){
+  let y, es;
+  if (phase === 0){ y = (tk-273.15)/(tk-32.18); es = 6.1121*Math.exp(17.502*y); }
+  else { y = (tk-273.15)/(tk-0.6); es = 6.1115*Math.exp(22.452*y); }
+  return 1.004*es;
+}
+function ljDewPoint(e){
+  const z = Math.log(e/(6.1121*1.004));
+  return 273.15 + 240.97*z/(17.502-z);
+}
+function ljViscosity(Tair){
+  const sigma=3.617, epsK=97.0;
+  const Tr = Tair/epsK;
+  const omega = (Tr-2.9)/0.4*(-0.034) + 1.048;
+  return 2.6693e-6*Math.sqrt(LJ.M_AIR*Tair)/(sigma*sigma*omega);
+}
+function ljThermalCond(Tair){ return (LJ.Cp+1.25*LJ.R_AIR)*ljViscosity(Tair); }
+function ljDiffusivity(Tair,Pair){
+  const Pca=36.4, Pch=218.0, Tca=132.0, Tch=647.3, a=3.640e-4, b=2.334;
+  const Pcrit13=Math.pow(Pca*Pch,1/3);
+  const Tcrit512=Math.pow(Tca*Tch,5/12);
+  const Tcrit12=Math.sqrt(Tca*Tch);
+  const Mmix=Math.sqrt(1/LJ.M_AIR+1/LJ.M_H2O);
+  const Patm=Pair/1013.25;
+  return a*Math.pow(Tair/Tcrit12,b)*Pcrit13*Tcrit512*Mmix/Patm*1e-4;
+}
+function ljEvap(Tair){ return (313.15-Tair)/30*(-71100)+2.4073e6; }
+function ljEmisAtm(Tair,rh){ return 0.575*Math.pow(rh*ljEsat(Tair,0), 0.143); }
+function ljHCylinder(diameter,length,Tair,Pair,speed){
+  const a=0.56,b=0.281,c=0.4;
+  const density = Pair*100/(LJ.R_AIR*Tair);
+  const Re = Math.max(speed,LJ.MIN_SPEED)*density*diameter/ljViscosity(Tair);
+  const Nu = b*Math.pow(Re,1-c)*Math.pow(LJ.PR,1-a);
+  return Nu*ljThermalCond(Tair)/diameter;
+}
+function ljHSphere(diameter,Tair,Pair,speed){
+  const density = Pair*100/(LJ.R_AIR*Tair);
+  const Re = Math.max(speed,LJ.MIN_SPEED)*density*diameter/ljViscosity(Tair);
+  const Nu = 2.0 + 0.6*Math.sqrt(Re)*Math.pow(LJ.PR,1/3);
+  return Nu*ljThermalCond(Tair)/diameter;
+}
+function ljTwb(Tair,rh,Pair,speed,solar,fdir,cza,rad){
+  const a=0.56, Tsfc=Tair, sza=Math.acos(Math.max(-1,Math.min(1,cza)));
+  const eair = rh*ljEsat(Tair,0);
+  let TwbPrev = ljDewPoint(eair);
+  let converged=false, iter=0, TwbNew=TwbPrev;
+  while(!converged && iter<LJ.MAX_ITER){
+    iter++;
+    const Tref = 0.5*(TwbPrev+Tair);
+    const h = ljHCylinder(LJ.D_WICK,LJ.L_WICK,Tref,Pair,speed);
+    const Fatm = LJ.STEFANB*LJ.EMIS_WICK*(0.5*(ljEmisAtm(Tair,rh)*Math.pow(Tair,4)+LJ.EMIS_SFC*Math.pow(Tsfc,4)) - Math.pow(TwbPrev,4))
+      + (1-LJ.ALB_WICK)*solar*((1-fdir)*(1+0.25*LJ.D_WICK/LJ.L_WICK) + fdir*((Math.tan(sza)/Math.PI)+0.25*LJ.D_WICK/LJ.L_WICK) + LJ.ALB_SFC);
+    const ewick = ljEsat(TwbPrev,0);
+    const density = Pair*100/(LJ.R_AIR*Tref);
+    const Sc = ljViscosity(Tref)/(density*ljDiffusivity(Tref,Pair));
+    TwbNew = Tair - ljEvap(Tref)/LJ.RATIO*(ewick-eair)/(Pair-ewick)*Math.pow(LJ.PR/Sc,a) + (Fatm/h*rad);
+    if (Math.abs(TwbNew-TwbPrev) < LJ.CONVERGENCE) converged=true;
+    TwbPrev = 0.9*TwbPrev + 0.1*TwbNew;
+  }
+  return converged ? (TwbNew-273.15) : null;
+}
+function ljTglobe(Tair,rh,Pair,speed,solar,fdir,cza){
+  const Tsfc=Tair;
+  let TgPrev=Tair, converged=false, iter=0, TgNew=TgPrev;
+  while(!converged && iter<LJ.MAX_ITER){
+    iter++;
+    const Tref = 0.5*(TgPrev+Tair);
+    const h = ljHSphere(LJ.D_GLOBE,Tref,Pair,speed);
+    const base = 0.5*(ljEmisAtm(Tair,rh)*Math.pow(Tair,4)+LJ.EMIS_SFC*Math.pow(Tsfc,4))
+      - h/(LJ.STEFANB*LJ.EMIS_GLOBE)*(TgPrev-Tair)
+      + solar/(2*LJ.STEFANB*LJ.EMIS_GLOBE)*(1-LJ.ALB_GLOBE)*(fdir*(1/(2*Math.max(cza,0.01))-1)+1+LJ.ALB_SFC);
+    TgNew = Math.pow(Math.max(base,1e-3), 0.25);
+    if (Math.abs(TgNew-TgPrev) < LJ.CONVERGENCE) converged=true;
+    TgPrev = 0.9*TgPrev + 0.1*TgNew;
+  }
+  return converged ? (TgNew-273.15) : null;
+}
+function ljDaynum(year,month,day){
+  const begmonth=[0,0,31,59,90,120,151,181,212,243,273,304,334];
+  let leap = ((year%4===0 && year%100!==0) || year%400===0) ? 1 : 0;
+  let dnum = begmonth[month]+day;
+  if (leap && month>2) dnum += 1;
+  return dnum;
+}
+function ljSolarPosition(year,month,day,lat,lon){
+  const DEG_RAD=Math.PI/180, RAD_DEG=180/Math.PI, TWOPI=2*Math.PI;
+  const frac = x => x - Math.floor(x);
+  const deltaYears = year-2000;
+  const dayInt = Math.floor(day);
+  const daynumber = ljDaynum(year,month,dayInt);
+  let deltaDays = deltaYears*365 + Math.floor(deltaYears/4) + daynumber;
+  if (year>2000) deltaDays += 1;
+  let daysJ2000 = deltaDays - 1.5;
+  const centJ2000 = daysJ2000/36525.0;
+  const utFrac = day - dayInt;
+  daysJ2000 += utFrac;
+  const ut = utFrac*24.0;
+
+  const meanAnomaly = frac((357.528+0.9856003*daysJ2000)/360.0)*TWOPI;
+  const meanLongitude = frac((280.460+0.9856474*daysJ2000)/360.0)*TWOPI;
+  const meanObliquity = (23.439 - 4.0e-7*daysJ2000)*DEG_RAD;
+  const eclipticLong = (1.915*Math.sin(meanAnomaly)+0.020*Math.sin(2*meanAnomaly))*DEG_RAD + meanLongitude;
+  const soldist = 1.00014 - 0.01671*Math.cos(meanAnomaly) - 0.00014*Math.cos(2*meanAnomaly);
+
+  let apRa = Math.atan2(Math.cos(meanObliquity)*Math.sin(eclipticLong), Math.cos(eclipticLong));
+  if (apRa<0) apRa += TWOPI;
+  apRa = frac(apRa/TWOPI)*24.0;
+  const apDec = Math.asin(Math.sin(meanObliquity)*Math.sin(eclipticLong));
+
+  let gmst0h = 24110.54841 + centJ2000*(8640184.812866 + centJ2000*(0.093104 - centJ2000*6.2e-6));
+  gmst0h = frac(gmst0h/3600.0/24.0)*24.0;
+  if (gmst0h<0) gmst0h += 24.0;
+
+  let lmst = gmst0h + ut*1.00273790934 + lon/15.0;
+  lmst = frac(lmst/24.0)*24.0;
+  if (lmst<0) lmst += 24.0;
+
+  let localHa = lmst - apRa;
+  if (localHa < -12.0) localHa += 24.0;
+  else if (localHa > 12.0) localHa -= 24.0;
+
+  const latRad = lat*DEG_RAD;
+  const localHaRad = localHa/24.0*TWOPI;
+  const cosApdec=Math.cos(apDec), sinApdec=Math.sin(apDec);
+  const cosLat=Math.cos(latRad), sinLat=Math.sin(latRad);
+  const cosLha=Math.cos(localHaRad);
+
+  const altitude = Math.asin(sinApdec*sinLat + cosApdec*cosLha*cosLat);
+  const cosAlt = Math.cos(altitude);
+  const tanAlt = Math.abs(altitude) < 1.57079615 ? Math.tan(altitude) : 6.0e6;
+
+  let altitudeDeg = altitude*RAD_DEG;
+  const pressure=1013.25, temp=15.0;
+  let refraction;
+  if (altitudeDeg < -1.0 || tanAlt===6.0e6){
+    refraction = 0.0;
+  } else if (altitudeDeg < 19.225){
+    refraction = (0.1594 + altitudeDeg*(0.0196+0.00002*altitudeDeg))*pressure;
+    refraction /= (1.0+altitudeDeg*(0.505+0.0845*altitudeDeg))*(273.0+temp);
+  } else {
+    refraction = 0.00452*(pressure/(273.0+temp))/tanAlt;
+  }
+  altitudeDeg += refraction;
+  return { elevDeg: altitudeDeg, soldist };
+}
+function ljSolarParams(year,month,dday,lat,lon,solarObserved){
+  const DEG_RAD = Math.PI/180;
+  const { elevDeg, soldist } = ljSolarPosition(year,month,dday,lat,lon);
+  const cza = Math.cos((90-elevDeg)*DEG_RAD);
+  let toasolar = LJ.SOLAR_CONST*Math.max(0,cza)/(soldist*soldist);
+  if (cza < LJ.CZA_MIN) toasolar = 0;
+  let solar = solarObserved, fdir = 0;
+  if (toasolar > 0){
+    const normsolar = Math.min(solar/toasolar, LJ.NORMSOLAR_MAX);
+    solar = normsolar*toasolar;
+    if (normsolar > 0){
+      fdir = Math.exp(3-1.34*normsolar-1.65/normsolar);
+      fdir = Math.max(Math.min(fdir,0.9),0.0);
+    }
+  }
+  return { cza, fdir, solar };
+}
+
+// Full physical WBGT estimate for one hour. Falls back to the simplified
+// formula (converted from °F) if the iterative solve fails to converge.
+function calcWBGTHour({year,month,day,hour,lat,lon,solarWm2,presHPa,tairC,relhumPct,windMs,tempFforFallback}){
+  const gmtOffsetHours = state.utcOffsetSeconds/3600;
+  const hourGmt = hour - gmtOffsetHours - 0.5; // center on the hour, avg=60min
+  const dday = day + hourGmt/24.0;
+  const { cza, fdir, solar } = ljSolarParams(year,month,dday,lat,lon, Math.max(solarWm2,0));
+
+  // Wind is provided at 10 m; the model expects ~2 m. Extrapolate with a
+  // standard logarithmic wind profile for short-grass terrain (z0=0.03 m)
+  // rather than Liljegren's original stability-class table, which needs a
+  // vertical temperature-gradient input not available from forecast data.
+  const z0 = 0.03;
+  let speed2m = windMs * (Math.log(LJ.REF_HEIGHT/z0)/Math.log(10/z0));
+  speed2m = Math.max(speed2m, LJ.MIN_SPEED);
+
+  const tk = tairC + 273.15;
+  const rh = Math.min(Math.max(relhumPct,1),100)/100.0;
+  const pres = presHPa || 1013.25;
+
+  try {
+    const Tg = ljTglobe(tk, rh, pres, speed2m, solar, fdir, cza);
+    const Tnwb = ljTwb(tk, rh, pres, speed2m, solar, fdir, cza, 1);
+    if (Tg === null || Tnwb === null) throw new Error('no convergence');
+    const wbgtC = 0.1*tairC + 0.2*Tg + 0.7*Tnwb;
+    return {
+      wbgtF: wbgtC*9/5+32,
+      method: 'liljegren',
+      globeF: Tg*9/5+32,
+      nwbF: Tnwb*9/5+32
+    };
+  } catch(e){
+    return { wbgtF: computeWBGTSimpleF(tempFforFallback, relhumPct), method: 'simplified', globeF: null, nwbF: null };
+  }
+}
+
+function formatHourLabel(isoStr){
+  // isoStr like 2026-07-01T18:00
+  const hh = parseInt(isoStr.slice(11,13),10);
+  const ampm = hh >= 12 ? "PM" : "AM";
+  let h12 = hh % 12; if (h12===0) h12=12;
+  return h12 + ampm;
+}
+
+function setLocLabel(text){ document.getElementById('locLabel').textContent = text; }
+
+function renderLoading(){
+  document.getElementById('mainContent').innerHTML = '<div class="state-msg">Loading conditions…</div>';
+}
+
+function renderError(msg, retryFn){
+  const el = document.getElementById('mainContent');
+  el.innerHTML = '<div class="state-msg">' + msg + '<br><button class="btn" id="retryBtn">Try again</button></div>';
+  document.getElementById('retryBtn').addEventListener('click', retryFn);
+}
+
+async function fetchWeather(loc){
+  renderLoading();
+  try {
+    const url = "https://api.open-meteo.com/v1/forecast"
+      + "?latitude=" + loc.lat
+      + "&longitude=" + loc.lon
+      + "&hourly=temperature_2m,relative_humidity_2m,cloud_cover,wind_speed_10m,shortwave_radiation,surface_pressure"
+      + "&wind_speed_unit=ms"
+      + "&timezone=auto"
+      + "&forecast_days=2";
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Weather service returned " + res.status);
+    const data = await res.json();
+
+    state.utcOffsetSeconds = data.utc_offset_seconds || 0;
+    const nowLocal = new Date(Date.now() + state.utcOffsetSeconds*1000);
+    const pad = n => String(n).padStart(2,'0');
+    const todayDate = nowLocal.getUTCFullYear() + '-' + pad(nowLocal.getUTCMonth()+1) + '-' + pad(nowLocal.getUTCDate());
+    const nowHourPrefix = todayDate + 'T' + pad(nowLocal.getUTCHours());
+
+    const times = data.hourly.time;
+    const tempsC = data.hourly.temperature_2m;
+    const rhs = data.hourly.relative_humidity_2m;
+    const winds = data.hourly.wind_speed_10m;
+    const solars = data.hourly.shortwave_radiation;
+    const pressures = data.hourly.surface_pressure;
+
+    const hourly = [];
+    for (let i=0;i<times.length;i++){
+      if (times[i].slice(0,10) !== todayDate) continue;
+      const year = parseInt(times[i].slice(0,4),10);
+      const month = parseInt(times[i].slice(5,7),10);
+      const day = parseInt(times[i].slice(8,10),10);
+      const hour = parseInt(times[i].slice(11,13),10);
+      const tempFforFallback = tempsC[i]*9/5+32;
+
+      const result = calcWBGTHour({
+        year, month, day, hour,
+        lat: loc.lat, lon: loc.lon,
+        solarWm2: solars[i], presHPa: pressures[i],
+        tairC: tempsC[i], relhumPct: rhs[i], windMs: winds[i],
+        tempFforFallback
+      });
+
+      hourly.push({
+        timeStr: times[i],
+        hourLabel: formatHourLabel(times[i]),
+        tempF: tempFforFallback,
+        rh: rhs[i],
+        wbgt: result.wbgtF,
+        method: result.method,
+        globeF: result.globeF,
+        nwbF: result.nwbF,
+        cat: categorize(result.wbgtF)
+      });
+    }
+
+    state.hourly = hourly;
+
+    // select the hour matching current local hour by default
+    let idx = hourly.findIndex(h => h.timeStr.slice(0,13) === nowHourPrefix);
+    if (idx === -1) idx = 0;
+    state.selectedIdx = idx;
+
+    renderAll();
+  } catch (err){
+    renderError("Couldn't load weather data (" + err.message + ").", () => fetchWeather(loc));
+  }
+}
+
+function renderAll(){
+  const el = document.getElementById('mainContent');
+  el.innerHTML =
+    '<div class="banner" id="banner"></div>' +
+    '<section>' +
+      '<h2 class="section-title">Today\'s Heat Flag Timeline</h2>' +
+      '<div class="timeline" id="timeline"></div>' +
+    '</section>' +
+    '<section>' +
+      '<h2 class="section-title">Selected Hour Detail</h2>' +
+      '<div class="detail" id="detail"></div>' +
+    '</section>' +
+    '<section>' +
+      '<h2 class="section-title">Flag Guide</h2>' +
+      '<div class="legend" id="legend"></div>' +
+    '</section>';
+
+  renderLegend();
+  renderTimeline();
+  renderSelected();
+}
+
+function renderLegend(){
+  const el = document.getElementById('legend');
+  el.innerHTML = THRESHOLDS.map((t,i) => {
+    const min = i===0 ? "< " + t.max + "°F" : (THRESHOLDS[i-1].max + "–" + (t.max===999 ? "+" : t.max) + "°F");
+    return '<div class="legend-row"><div class="sw sw-' + t.key + '"></div><div class="rng">' + min + '</div><div class="txt"><strong>' + t.label + '.</strong> ' + t.advice + '</div></div>';
+  }).join('');
+}
+
+function renderTimeline(){
+  const el = document.getElementById('timeline');
+  el.innerHTML = state.hourly.map((h, i) => {
+    const active = i === state.selectedIdx ? ' active' : '';
+    return '<div class="chip' + active + '" data-idx="' + i + '">' +
+      '<div class="hr">' + h.hourLabel + '</div>' +
+      '<div class="swatch sw-' + h.cat.key + '"></div>' +
+      '<div class="val">' + Math.round(h.wbgt) + '°</div>' +
+    '</div>';
+  }).join('');
+  el.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      state.selectedIdx = parseInt(chip.getAttribute('data-idx'),10);
+      renderTimeline();
+      renderSelected();
+    });
+  });
+}
+
+function renderSelected(){
+  const h = state.hourly[state.selectedIdx];
+  if (!h) return;
+  const banner = document.getElementById('banner');
+  banner.className = 'banner flag-' + h.cat.key;
+  banner.innerHTML =
+    '<div class="flagname">' + h.cat.key + ' flag &middot; ' + h.hourLabel + '</div>' +
+    '<div class="bignum">' + Math.round(h.wbgt) + '<sup>°F</sup></div>' +
+    '<div class="cat">' + h.cat.label + '</div>' +
+    '<div class="advice">' + h.cat.advice + '</div>' +
+    '<div class="meta">TEMP ' + Math.round(h.tempF) + '°F &nbsp;·&nbsp; RH ' + Math.round(h.rh) + '% &nbsp;·&nbsp; ' + state.loc.label.toUpperCase() + '</div>';
+
+  const detail = document.getElementById('detail');
+  const methodRow = h.method === 'liljegren'
+    ? '<tr><td class="k">Globe temperature</td><td class="v">' + h.globeF.toFixed(1) + '°F</td></tr>' +
+      '<tr><td class="k">Natural wet-bulb temp.</td><td class="v">' + h.nwbF.toFixed(1) + '°F</td></tr>' +
+      '<tr><td class="k">Model</td><td class="v">Liljegren (2008)</td></tr>'
+    : '<tr><td class="k">Model</td><td class="v">Simplified fallback</td></tr>';
+  detail.innerHTML =
+    '<table>' +
+    '<tr><td class="k">Time</td><td class="v">' + h.hourLabel + '</td></tr>' +
+    '<tr><td class="k">Air temperature</td><td class="v">' + h.tempF.toFixed(1) + '°F</td></tr>' +
+    '<tr><td class="k">Relative humidity</td><td class="v">' + Math.round(h.rh) + '%</td></tr>' +
+    methodRow +
+    '<tr><td class="k">Estimated WBGT</td><td class="v">' + h.wbgt.toFixed(1) + '°F</td></tr>' +
+    '<tr><td class="k">Flag category</td><td class="v">' + h.cat.label + '</td></tr>' +
+    '</table>';
+}
+
+function setLocation(loc){
+  state.loc = loc;
+  setLocLabel(loc.label);
+  fetchWeather(loc);
+}
+
+// ---- Geolocation ----
+document.getElementById('useLocationBtn').addEventListener('click', () => {
+  setLocLabel("Locating…");
+  if (!navigator.geolocation){
+    setLocation(DEFAULT_LOC);
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    pos => setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "Current location" }),
+    () => setLocation(DEFAULT_LOC),
+    { timeout: 6000 }
+  );
+});
+
+// ---- Search ----
+const searchRow = document.getElementById('searchRow');
+document.getElementById('changeLocBtn').addEventListener('click', () => {
+  searchRow.classList.toggle('open');
+});
+
+function buildQueryVariants(q){
+  const variants = [q];
+  // Strip anything after a comma: "Slingerlands, NY" -> "Slingerlands"
+  const commaBase = q.split(',')[0].trim();
+  if (commaBase && commaBase !== q) variants.push(commaBase);
+
+  // Strip a trailing 2-letter state/province abbreviation: "Slingerlands NY" -> "Slingerlands"
+  const words = q.trim().split(/\s+/);
+  if (words.length > 1){
+    const last = words[words.length-1];
+    if (/^[A-Za-z]{2}$/.test(last)){
+      variants.push(words.slice(0,-1).join(' '));
+    }
+  }
+  // Strip common trailing words like "County"
+  const noCounty = q.replace(/\s+county$/i,'').trim();
+  if (noCounty && noCounty !== q) variants.push(noCounty);
+
+  // De-dupe, drop empties
+  return [...new Set(variants.map(v=>v.trim()).filter(Boolean))];
+}
+
+async function geocodeOnce(q){
+  const url = "https://geocoding-api.open-meteo.com/v1/search?name=" + encodeURIComponent(q) + "&count=8&language=en&format=json";
+  const res = await fetch(url);
+  const data = await res.json();
+  return (data && data.results) ? data.results : [];
+}
+
+async function doSearch(){
+  const qRaw = document.getElementById('searchInput').value.trim();
+  const resultsEl = document.getElementById('searchResults');
+  const hintEl = document.getElementById('searchHint');
+  hintEl.style.display = 'none';
+  if (!qRaw){ resultsEl.innerHTML=''; return; }
+  resultsEl.innerHTML = '<div style="color:var(--ink-soft);font-size:12px;padding:4px 0;">Searching…</div>';
+  try {
+    const variants = buildQueryVariants(qRaw);
+    let results = [];
+    let usedVariant = qRaw;
+    for (const v of variants){
+      results = await geocodeOnce(v);
+      if (results.length){ usedVariant = v; break; }
+    }
+    if (!results.length){
+      resultsEl.innerHTML = '<div style="color:var(--ink-soft);font-size:12px;padding:4px 0;">No matches found for "' + qRaw + '".</div>';
+      hintEl.style.display = 'block';
+      return;
+    }
+    resultsEl.innerHTML = results.map((r,i) => {
+      const label = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+      return '<div data-i="' + i + '">' + label + '</div>';
+    }).join('');
+    resultsEl.querySelectorAll('div[data-i]').forEach(row => {
+      row.addEventListener('click', () => {
+        const r = results[parseInt(row.getAttribute('data-i'),10)];
+        const label = [r.name, r.admin1].filter(Boolean).join(', ');
+        setLocation({ lat: r.latitude, lon: r.longitude, label: label });
+        searchRow.classList.remove('open');
+        resultsEl.innerHTML = '';
+        document.getElementById('searchInput').value = '';
+      });
+    });
+  } catch(e){
+    resultsEl.innerHTML = '<div style="color:var(--ink-soft);font-size:12px;padding:4px 0;">Search failed. Try again.</div>';
+  }
+}
+document.getElementById('searchBtn').addEventListener('click', doSearch);
+document.getElementById('searchInput').addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+
+document.getElementById('refreshBtn').addEventListener('click', () => {
+  if (state.loc) fetchWeather(state.loc);
+});
+
+// ---- Init ----
+(function init(){
+  setLocLabel("Locating…");
+  if (navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      pos => setLocation({ lat: pos.coords.latitude, lon: pos.coords.longitude, label: "Current location" }),
+      () => setLocation(DEFAULT_LOC),
+      { timeout: 6000 }
+    );
+  } else {
+    setLocation(DEFAULT_LOC);
+  }
+})();
+</script>
+</body>
+</html>
