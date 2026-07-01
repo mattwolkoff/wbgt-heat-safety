@@ -62,6 +62,13 @@
   h2.section-title{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:1.5px;color:var(--ink-soft);margin:0 0 10px;}
 
   .timeline{display:flex;gap:4px;overflow-x:auto;padding-bottom:6px;-ms-overflow-style:none;scrollbar-width:thin;}
+
+  .daytabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;-ms-overflow-style:none;scrollbar-width:thin;}
+  .daychip{flex:0 0 auto;min-width:58px;text-align:center;cursor:pointer;padding:8px 10px;border-radius:9px;background:var(--paper-dim);border:2px solid transparent;}
+  .daychip:hover{background:#fff;}
+  .daychip.active{border-color:var(--ink);background:#fff;}
+  .daychip .dc-top{font-family:'Inter',sans-serif;font-weight:700;font-size:13px;}
+  .daychip .dc-bottom{font-family:'IBM Plex Mono',monospace;font-size:10px;color:var(--ink-soft);margin-top:2px;}
   .chip{flex:0 0 auto;width:42px;text-align:center;cursor:pointer;padding:6px 0 8px;border-radius:8px;background:transparent;border:2px solid transparent;}
   .chip:hover{background:var(--paper-dim);}
   .chip.active{border-color:var(--ink);background:#fff;}
@@ -143,7 +150,12 @@ const THRESHOLDS = [
 let state = {
   loc: null,
   utcOffsetSeconds: 0,
-  hourly: [],       // [{timeStr, hourLabel, tempF, rh, wbgt, method, globeF, nwbF, cat}]
+  todayDate: null,
+  nowHourPrefix: null,
+  dates: [],
+  selectedDate: null,
+  allHourly: [],
+  hourly: [],       // hours for the currently selected date
   selectedIdx: null
 };
 
@@ -407,7 +419,7 @@ async function fetchWeather(loc){
       + "&hourly=temperature_2m,relative_humidity_2m,cloud_cover,wind_speed_10m,shortwave_radiation,surface_pressure"
       + "&wind_speed_unit=ms"
       + "&timezone=auto"
-      + "&forecast_days=2";
+      + "&forecast_days=7";
     const res = await fetch(url);
     if (!res.ok) throw new Error("Weather service returned " + res.status);
     const data = await res.json();
@@ -425,9 +437,12 @@ async function fetchWeather(loc){
     const solars = data.hourly.shortwave_radiation;
     const pressures = data.hourly.surface_pressure;
 
-    const hourly = [];
+    const allHourly = [];
     for (let i=0;i<times.length;i++){
-      if (times[i].slice(0,10) !== todayDate) continue;
+      // Don't compute hours already in the past today (kept out to save cycles),
+      // but keep every hour of today and all future days.
+      if (times[i].slice(0,10) === todayDate && times[i].slice(0,13) < nowHourPrefix) continue;
+
       const year = parseInt(times[i].slice(0,4),10);
       const month = parseInt(times[i].slice(5,7),10);
       const day = parseInt(times[i].slice(8,10),10);
@@ -442,8 +457,9 @@ async function fetchWeather(loc){
         tempFforFallback
       });
 
-      hourly.push({
+      allHourly.push({
         timeStr: times[i],
+        dateStr: times[i].slice(0,10),
         hourLabel: formatHourLabel(times[i]),
         tempF: tempFforFallback,
         rh: rhs[i],
@@ -455,17 +471,40 @@ async function fetchWeather(loc){
       });
     }
 
-    state.hourly = hourly;
-
-    // select the hour matching current local hour by default
-    let idx = hourly.findIndex(h => h.timeStr.slice(0,13) === nowHourPrefix);
-    if (idx === -1) idx = 0;
-    state.selectedIdx = idx;
+    state.allHourly = allHourly;
+    state.todayDate = todayDate;
+    state.nowHourPrefix = nowHourPrefix;
+    state.dates = [...new Set(allHourly.map(h => h.dateStr))];
 
     renderAll();
+    selectDate(todayDate);
   } catch (err){
     renderError("Couldn't load weather data (" + err.message + ").", () => fetchWeather(loc));
   }
+}
+
+function dayLabel(dateStr, todayDate){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const [ty,tm,td] = todayDate.split('-').map(Number);
+  const diffDays = Math.round((Date.UTC(y,m-1,d) - Date.UTC(ty,tm-1,td)) / 86400000);
+  if (diffDays === 0) return { top: 'Today', bottom: (m+'/'+d) };
+  if (diffDays === 1) return { top: 'Tomorrow', bottom: (m+'/'+d) };
+  const wd = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][new Date(Date.UTC(y,m-1,d)).getUTCDay()];
+  return { top: wd, bottom: (m+'/'+d) };
+}
+
+function selectDate(dateStr){
+  state.selectedDate = dateStr;
+  state.hourly = state.allHourly.filter(h => h.dateStr === dateStr);
+  if (dateStr === state.todayDate){
+    let idx = state.hourly.findIndex(h => h.timeStr.slice(0,13) === state.nowHourPrefix);
+    state.selectedIdx = idx === -1 ? 0 : idx;
+  } else {
+    state.selectedIdx = 0;
+  }
+  renderDayTabs();
+  renderTimeline();
+  renderSelected();
 }
 
 function renderAll(){
@@ -473,7 +512,11 @@ function renderAll(){
   el.innerHTML =
     '<div class="banner" id="banner"></div>' +
     '<section>' +
-      '<h2 class="section-title">Today\'s Heat Flag Timeline</h2>' +
+      '<h2 class="section-title">Forecast Day</h2>' +
+      '<div class="daytabs" id="dayTabs"></div>' +
+    '</section>' +
+    '<section>' +
+      '<h2 class="section-title">Heat Flag Timeline</h2>' +
       '<div class="timeline" id="timeline"></div>' +
     '</section>' +
     '<section>' +
@@ -486,8 +529,22 @@ function renderAll(){
     '</section>';
 
   renderLegend();
-  renderTimeline();
-  renderSelected();
+}
+
+function renderDayTabs(){
+  const el = document.getElementById('dayTabs');
+  if (!el) return;
+  el.innerHTML = state.dates.map(d => {
+    const lbl = dayLabel(d, state.todayDate);
+    const active = d === state.selectedDate ? ' active' : '';
+    return '<div class="daychip' + active + '" data-date="' + d + '">' +
+      '<div class="dc-top">' + lbl.top + '</div>' +
+      '<div class="dc-bottom">' + lbl.bottom + '</div>' +
+    '</div>';
+  }).join('');
+  el.querySelectorAll('.daychip').forEach(chip => {
+    chip.addEventListener('click', () => selectDate(chip.getAttribute('data-date')));
+  });
 }
 
 function renderLegend(){
